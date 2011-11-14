@@ -4,5 +4,15 @@ runtime: go
 api_version: 3
 
 handlers:
+
+- url: /votch/.*
+  script: _go_app
+  login: required
+
+- url: /secure_api
+  script: _go_app
+  login: required
+  auth_fail_action: unauthorized
+
 - url: /.*
   script: _go_app
