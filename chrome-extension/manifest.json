@@ -1,0 +1,18 @@
+{
+    "name": "votchr",
+    "version": "1.0",
+    "description": "Adds a context menu for inserting votchr tracking images",
+    "content_scripts": [
+        {
+            "matches": ["http://*/"],
+            "js": ["votch_injector.js"]
+        }
+    ],
+    "permissions": [
+        "contextMenus",
+        "tabs",
+        "http://*/", // We need permissions for all pages to programmatically
+        "https://*/" // inject content scripts into any page.
+    ],
+    "background_page": "bg.html"
+}
