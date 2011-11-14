@@ -40,20 +40,16 @@ type View struct {
 
 func image(w http.ResponseWriter, r *http.Request) {
     c := appengine.NewContext(r)
-    u := user.Current(c)
-    if u != nil {
-        v := View {
-            Url : r.URL.String(),
-            Viewer : r.RemoteAddr,
-        }
-        _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "image", nil), &v)
-        if err != nil {
-            http.Error(w, err.String(), http.StatusInternalServerError)
-            return
-        }
-    } else {
-        fmt.Fprintf(w, "Please, <a href='/login'>login</a>.")
+    v := View {
+        Url : r.URL.String(),
+        Viewer : r.RemoteAddr,
     }
+    _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "image", nil), &v)
+    if err != nil {
+        http.Error(w, err.String(), http.StatusInternalServerError)
+        return
+    }
+    fmt.Fprintf(w, "%v",v)
 }
 
 func root(w http.ResponseWriter, r *http.Request) {
