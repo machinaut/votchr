@@ -2,7 +2,7 @@ package votchr
 
 import (
     "appengine"
-    //"appengine/datastore"
+    "appengine/datastore"
     "appengine/user"
     "fmt"
     "http"
@@ -12,28 +12,51 @@ import (
 )
 
 func init() {
-    http.HandleFunc("/", hello)
+    http.HandleFunc("/", root)
+    http.HandleFunc("/image", image)
     http.HandleFunc("/votch", votch)
-    http.HandleFunc("/_ah/login_required", openIdHandler)
+    http.HandleFunc("/login", login)
 }
 
 func votch(w http.ResponseWriter, r *http.Request) {
     c := appengine.NewContext(r)
     u := user.Current(c)
     if u != nil {
-        url, err := user.LogoutURL(c, "/")
+        _, err := user.LogoutURL(c, "/")
         if err != nil {
             http.Error(w, err.String(), http.StatusInternalServerError)
             return
         }
-        fmt.Fprintf(w, "Hello, %s! (<a href='%s'>Sign out</a>)", u, url)
+        fmt.Fprintf(w, `{"votch_url":"http://i.imgur.com/CW5y1.jpg"}`)
     } else {
         unauthorized(w, r)
     }
-
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
+type View struct {
+    Url string
+    Viewer string
+}
+
+func image(w http.ResponseWriter, r *http.Request) {
+    c := appengine.NewContext(r)
+    u := user.Current(c)
+    if u != nil {
+        v := View {
+            Url : r.URL.String(),
+            Viewer : r.RemoteAddr,
+        }
+        _, err := datastore.Put(c, datastore.NewIncompleteKey(c, "image", nil), &v)
+        if err != nil {
+            http.Error(w, err.String(), http.StatusInternalServerError)
+            return
+        }
+    } else {
+        fmt.Fprintf(w, "Please, <a href='/login'>login</a>.")
+    }
+}
+
+func root(w http.ResponseWriter, r *http.Request) {
     c := appengine.NewContext(r)
     u := user.Current(c)
     if u != nil {
@@ -44,18 +67,21 @@ func hello(w http.ResponseWriter, r *http.Request) {
         }
         fmt.Fprintf(w, "Hello, %s! (<a href='%s'>Sign out</a>)", u, url)
     } else {
-        fmt.Fprintf(w, "Please, <a href='/_ah/login_required'>login</a>.")
+        fmt.Fprintf(w, "Please, <a href='/login'>login</a>.")
     }
-
 }
 
-func openIdHandler(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) {
     providers := map[string]string {
-        "google"   : "gmail.com",
+        "Google"   : "www.google.com/accounts/o8/id",
+        "Yahoo"    : "yahoo.com",
+        "MySpace"  : "myspace.com",
+        "AOL"      : "aol.com",
+        "MyOpenID" : "myopenid.com",
     }
 
     c := appengine.NewContext(r)
-    fmt.Fprintf(w, "Sign in at: ")
+    fmt.Fprintf(w, "Hey you there sigin in at: ")
     for name, url := range providers {
         login_url, err := user.LoginURLFederated(c, "/", url)
         if err != nil {
@@ -67,7 +93,6 @@ func openIdHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // return 401 unauthorized
-func unauthorized(w http.ResponseWriter, req *http.Request){
-    w.Header().Set("Content-Type", "text/plain;" + "charset=utf-8")
+func unauthorized(w http.ResponseWriter, req *http.Request) {
     w.WriteHeader(http.StatusUnauthorized)
 }
